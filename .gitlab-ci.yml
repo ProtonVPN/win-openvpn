@@ -1,0 +1,42 @@
+variables:
+  PUBLIC_REPO_URL: git@github.com:ProtonVPN/win-openvpn.git
+
+stages:
+  - build
+  - mirror
+  
+before_script:
+  - docker info
+
+build:
+  stage: build
+  tags:
+    - windows
+  script:
+    - docker build -t openvpn .
+    - docker rm -f openvpn 2>&1 | out-null ; $global:LASTEXITCODE = $null
+    - docker run --name openvpn openvpn
+    - Remove-Item openvpn -Recurse -ErrorAction Ignore 2>&1 | out-null ; $global:LASTEXITCODE = $null
+    - New-Item -ItemType directory -Path openvpn
+    - docker cp openvpn:/home/openvpn-build/generic/image-win32/openvpn/bin openvpn/x86
+    - docker cp openvpn:/home/openvpn-build/generic/image-win64/openvpn/bin openvpn/x64
+  artifacts:
+    paths:
+      - openvpn
+    expire_in: '2 yrs'
+
+mirror:
+  stage: mirror
+  tags:
+    - windows
+  only:
+    refs:
+      - tags
+      - master
+  script:
+    - powershell -File prepare-ssh.ps1
+    - git clone "$CI_REPOSITORY_URL" --branch master _APP_CLONE;
+    - cd _APP_CLONE
+    - git remote add public $PUBLIC_REPO_URL
+    - git push public master
+    - git push public "$(git describe --abbrev=0)"

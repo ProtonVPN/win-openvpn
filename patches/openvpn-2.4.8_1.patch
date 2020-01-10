@@ -1,0 +1,17 @@
+--- a/src/openvpn/tun.c
++++ b/src/openvpn/tun.c
+@@ -1582,11 +1582,12 @@
+                 char iface[64];
+                 openvpn_snprintf(iface, sizeof(iface), "interface=%lu", tt->adapter_index );
+                 argv_printf(&argv,
+-                            "%s%sc interface ipv6 set address %s %s store=active",
++                            "%s%sc interface ipv6 set address %s %s/%d store=active",
+                             get_win_sys_path(),
+                             NETSH_PATH_SUFFIX,
+                             iface,
+-                            ifconfig_ipv6_local );
++                            ifconfig_ipv6_local,
++                            128);
+                 netsh_command(&argv, 4, M_FATAL);
+                 /* set ipv6 dns servers if any are specified */
+                 netsh_set_dns6_servers(tt->options.dns6, tt->options.dns6_len, actual);
